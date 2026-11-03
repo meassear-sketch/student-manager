@@ -85,9 +85,12 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
 .arc { cursor: pointer; transition: opacity .2s ease; }
 .donut:hover .arc { opacity: .45; }
 .donut .arc:hover { opacity: 1; }
-.classes { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; }
-.cls { all: unset; box-sizing: border-box; cursor: pointer; background: var(--canvas); border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 10px; min-width: 0; }
-.cls .num { font-family: var(--latin); font-weight: 700; font-size: 17px; letter-spacing: -0.01em; }
+.classes { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
+.cls { all: unset; box-sizing: border-box; cursor: pointer; background: var(--surface); box-shadow: inset 0 0 0 1px var(--track); border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; min-width: 0; }
+.cls .cls-text { flex: 1; display: grid; gap: 4px; min-width: 0; }
+.cls .top { font-weight: 700; font-size: 16px; }
+.cls .sub { font-size: 13px; }
+.cls .tot { color: var(--ink-2); font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .cls:focus-visible { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--focus); }
 .cls[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--ink); }
 .cls .top { display: flex; align-items: center; gap: 8px; font-weight: 700; }
@@ -105,7 +108,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
 @media (max-width: 720px) {
   .stats { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .by { grid-template-columns: minmax(0,1fr); }
-  .classes { grid-template-columns: repeat(3, minmax(0,1fr)); }
+  .classes { grid-template-columns: minmax(0,1fr); }
 }
 .btn { border: 0; border-radius: 999px; background: var(--pill); color: var(--pill-fg); padding: 11px 20px; font-weight: 600; font-size: 15px; cursor: pointer; min-height: 44px; white-space: nowrap; }
 .btn.ghost { background: var(--track); color: var(--ink); }
@@ -315,8 +318,8 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
   var IC_F = '<svg class="ic ic-f" viewBox="0 0 48 48" aria-label="F"><path fill="currentColor" d="M24 7 C17 7 14 12 14 19 L14 25 C14 27 15.5 28 17.5 28 L19.5 28 L19.5 31 C15 32 8 33 6 40 L42 40 C40 33 33 32 28.5 31 L28.5 28 L30.5 28 C32.5 28 34 27 34 25 L34 19 C34 12 31 7 24 7 Z"/></svg>';
 
   var I18N = {
-    km: { tabFind: "ស្វែងរក", tabAdmin: "Admin", theme: "ងងឹត / ភ្លឺ", h1find: "ស្វែងរកសិស្ស", h1admin: "គ្រប់គ្រង", hint: "វាយយ៉ាងតិច ២ តួអក្សរ", found: "រកឃើញ {n} នាក់", empty: "រកមិនឃើញ", loading: "កំពុងទាញទិន្នន័យ...", noYears: "មិនទាន់មានទិន្នន័យ", close: "បិទ", setupTitle: "កំណត់លេខសម្ងាត់", setupNote: "កំណត់លេខសម្ងាត់ admin ដោយខ្លួនឯង យ៉ាងតិច ១២ តួអក្សរ។ លេខសម្ងាត់នេះមិនត្រូវបានផ្ញើទៅណាឡើយ។", setupBtn: "កំណត់", loginTitle: "ចូល Admin", loginNote: "បញ្ចូលលេខសម្ងាត់ដើម្បីបន្ត។", loginBtn: "ចូល", pwLabel: "លេខសម្ងាត់", pwNew: "លេខសម្ងាត់ថ្មី", pwRepeat: "បញ្ជាក់លេខសម្ងាត់", pwCurrent: "លេខសម្ងាត់បច្ចុប្បន្ន", pwEyebrow: "ប្តូរលេខសម្ងាត់", pwSave: "រក្សាទុក", pwChanged: "បានប្តូរលេខសម្ងាត់ហើយ។", yearEyebrow: "ឆ្នាំសិក្សា", yearNote: "នាំចូល Excel តាមឆ្នាំ។ ឈ្មោះ sheet ជា 2026-2027 នឹងត្រូវប្រើជាឆ្នាំ។ លុបឆ្នាំមិនអាចត្រឡប់វិញបាន។", delYear: "លុបឆ្នាំដែលកំពុងមើល", importBtn: "ទាញទិន្នន័យចូល", sTotal: "សិស្សសរុប", sGrades: "ថ្នាក់", byGrade: "ស្ថិតិតាមថ្នាក់", tapHint: "ចុចផ្នែកក្រាប ដើម្បីមើលសិស្ស", clear: "បិទ", ph: "វាយឈ្មោះ ឬលេខកាតសិស្ស...", dph: "ស្វែងរកតាមឈ្មោះ ឬលេខសិស្ស...", all: "គ្រប់ថ្នាក់", gradeLbl: "ថ្នាក់ទី", id: "អត្តលេខ", sex: "ភេទ", dob: "ថ្ងៃកំណើត", stuGroup: "ក្រុម", oldNew: "ចាស់/ថ្មី", old: "ចាស់", newS: "ថ្មី", male: "ប្រុស", female: "ស្រី", sample: "" },
-    en: { tabFind: "Search", tabAdmin: "Admin", theme: "Dark / Light", h1find: "Find a student.", h1admin: "Manage.", hint: "Type at least 2 characters", found: "{n} found", empty: "No match", loading: "Loading...", noYears: "No data yet", close: "Close", setupTitle: "Set the password", setupNote: "Set the admin password yourself, at least 12 characters. It is never sent anywhere.", setupBtn: "Set password", loginTitle: "Admin sign-in", loginNote: "Enter the password to continue.", loginBtn: "Sign in", pwLabel: "Password", pwNew: "New password", pwRepeat: "Repeat password", pwCurrent: "Current password", pwEyebrow: "Change password", pwSave: "Save", pwChanged: "Password changed.", yearEyebrow: "School year", yearNote: "Import Excel by year. A sheet named 2026-2027 is used as that year. Deleting a year cannot be undone.", delYear: "Delete the year on screen", importBtn: "Import data", sTotal: "Total students", sGrades: "Grades", byGrade: "Students by grade", tapHint: "Tap a segment to see its students", clear: "Clear", ph: "Type a name or ID card number...", dph: "Search by name or student ID...", all: "All grades", gradeLbl: "Grade", id: "ID", sex: "Sex", dob: "Date of birth", stuGroup: "Group", oldNew: "Old/New", old: "Old", newS: "New", male: "Male", female: "Female", sample: "" }
+    km: { tabFind: "ស្វែងរក", tabAdmin: "Admin", theme: "ងងឹត / ភ្លឺ", h1find: "ស្វែងរកសិស្ស", h1admin: "គ្រប់គ្រង", hint: "វាយយ៉ាងតិច ២ តួអក្សរ", found: "រកឃើញ {n} នាក់", empty: "រកមិនឃើញ", loading: "កំពុងទាញទិន្នន័យ...", noYears: "មិនទាន់មានទិន្នន័យ", close: "បិទ", setupTitle: "កំណត់លេខសម្ងាត់", setupNote: "កំណត់លេខសម្ងាត់ admin ដោយខ្លួនឯង យ៉ាងតិច ១២ តួអក្សរ។ លេខសម្ងាត់នេះមិនត្រូវបានផ្ញើទៅណាឡើយ។", setupBtn: "កំណត់", loginTitle: "ចូល Admin", loginNote: "បញ្ចូលលេខសម្ងាត់ដើម្បីបន្ត។", loginBtn: "ចូល", pwLabel: "លេខសម្ងាត់", pwNew: "លេខសម្ងាត់ថ្មី", pwRepeat: "បញ្ជាក់លេខសម្ងាត់", pwCurrent: "លេខសម្ងាត់បច្ចុប្បន្ន", pwEyebrow: "ប្តូរលេខសម្ងាត់", pwSave: "រក្សាទុក", pwChanged: "បានប្តូរលេខសម្ងាត់ហើយ។", yearEyebrow: "ឆ្នាំសិក្សា", yearNote: "នាំចូល Excel តាមឆ្នាំ។ ឈ្មោះ sheet ជា 2026-2027 នឹងត្រូវប្រើជាឆ្នាំ។ លុបឆ្នាំមិនអាចត្រឡប់វិញបាន។", delYear: "លុបឆ្នាំដែលកំពុងមើល", importBtn: "ទាញទិន្នន័យចូល", sTotal: "សិស្សសរុប", sGrades: "ថ្នាក់", byGrade: "ស្ថិតិតាមថ្នាក់ (By Class)", tapHint: "👆 ចុចលើផ្នែកនៃក្រាប ដើម្បីមើលសិស្សក្នុងថ្នាក់នោះ", clear: "បិទ", ph: "វាយឈ្មោះ ឬលេខកាតសិស្ស...", dph: "ស្វែងរកតាមឈ្មោះ ឬលេខសិស្ស...", all: "គ្រប់ថ្នាក់", gradeLbl: "ថ្នាក់ទី", id: "អត្តលេខ", sex: "ភេទ", dob: "ថ្ងៃកំណើត", stuGroup: "ក្រុម", oldNew: "ចាស់/ថ្មី", old: "ចាស់", newS: "ថ្មី", male: "ប្រុស", female: "ស្រី", sample: "" },
+    en: { tabFind: "Search", tabAdmin: "Admin", theme: "Dark / Light", h1find: "Find a student.", h1admin: "Manage.", hint: "Type at least 2 characters", found: "{n} found", empty: "No match", loading: "Loading...", noYears: "No data yet", close: "Close", setupTitle: "Set the password", setupNote: "Set the admin password yourself, at least 12 characters. It is never sent anywhere.", setupBtn: "Set password", loginTitle: "Admin sign-in", loginNote: "Enter the password to continue.", loginBtn: "Sign in", pwLabel: "Password", pwNew: "New password", pwRepeat: "Repeat password", pwCurrent: "Current password", pwEyebrow: "Change password", pwSave: "Save", pwChanged: "Password changed.", yearEyebrow: "School year", yearNote: "Import Excel by year. A sheet named 2026-2027 is used as that year. Deleting a year cannot be undone.", delYear: "Delete the year on screen", importBtn: "Import data", sTotal: "Total students", sGrades: "Grades", byGrade: "Students by class (By Class)", tapHint: "👆 Tap a segment of the chart to see the students in that class", clear: "Clear", ph: "Type a name or ID card number...", dph: "Search by name or student ID...", all: "All grades", gradeLbl: "Grade", id: "ID", sex: "Sex", dob: "Date of birth", stuGroup: "Group", oldNew: "Old/New", old: "Old", newS: "New", male: "Male", female: "Female", sample: "" }
   };
 
   var state = { lang: "km", years: [], year: null, all: [], students: [], admin: false, adminPw: "", grade: null, q: "", dq: "" };
@@ -470,8 +473,12 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
       var b = document.createElement("button");
       b.type = "button"; b.className = "cls";
       b.setAttribute("aria-pressed", state.grade === x.g ? "true" : "false");
-      b.innerHTML = '<span class="dot" style="background:' + PAL[i % PAL.length] + '"></span><span class="num">' + esc(x.g) + '</span>';
-      b.title = gradeLabel(x.g) + ' · ' + nf(tot);
+      var unit = state.lang === "km" ? "នាក់" : "students";
+      b.innerHTML =
+        '<span class="dot" style="background:' + PAL[i % PAL.length] + '"></span>' +
+        '<span class="cls-text"><span class="top">' + esc(gradeLabel(x.g)) + '</span>' +
+        '<span class="sub">' + esc(t("male")) + ' ' + nf(x.m) + ' · ' + esc(t("female")) + ' ' + nf(x.f) + '</span></span>' +
+        '<span class="tot">' + nf(tot) + ' ' + unit + ' (' + pct(tot, total) + '%)</span>';
       b.addEventListener("click", function () { pickGrade(x.g); });
       box.appendChild(b);
       if (state.grade === x.g) box.appendChild(buildExpansion(x, total));
