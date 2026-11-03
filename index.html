@@ -85,8 +85,9 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
 .arc { cursor: pointer; transition: opacity .2s ease; }
 .donut:hover .arc { opacity: .45; }
 .donut .arc:hover { opacity: 1; }
-.classes { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; }
-.cls { all: unset; box-sizing: border-box; cursor: pointer; background: var(--canvas); border-radius: 16px; padding: 12px 14px; display: grid; gap: 4px; min-width: 0; }
+.classes { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 8px; }
+.cls { all: unset; box-sizing: border-box; cursor: pointer; background: var(--canvas); border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.cls .num { font-family: var(--latin); font-weight: 700; font-size: 17px; letter-spacing: -0.01em; }
 .cls:focus-visible { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--focus); }
 .cls[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--ink); }
 .cls .top { display: flex; align-items: center; gap: 8px; font-weight: 700; }
@@ -96,13 +97,15 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
 .cls .pct { color: var(--ink-2); font-size: 12px; font-family: var(--latin); }
 .cls-open { grid-column: 1 / -1; background: var(--canvas); border-radius: 16px; padding: 14px; display: grid; gap: 10px; animation: clsOpen .25s ease; }
 .cls-open-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
-.cls-open-head h3 { margin: 0; font-size: 16px; font-weight: 700; }
+.cls-open-info { display: grid; gap: 4px; min-width: 0; }
+.cls-open-info h3 { margin: 0; font-size: 17px; font-weight: 700; }
+.cls-open-sub { color: var(--ink-2); font-size: 13px; font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 @keyframes clsOpen { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .cls-open { animation: none; } }
 @media (max-width: 720px) {
   .stats { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .by { grid-template-columns: minmax(0,1fr); }
-  .classes { grid-template-columns: minmax(0,1fr); }
+  .classes { grid-template-columns: repeat(3, minmax(0,1fr)); }
 }
 .btn { border: 0; border-radius: 999px; background: var(--pill); color: var(--pill-fg); padding: 11px 20px; font-weight: 600; font-size: 15px; cursor: pointer; min-height: 44px; white-space: nowrap; }
 .btn.ghost { background: var(--track); color: var(--ink); }
@@ -467,25 +470,29 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
       var b = document.createElement("button");
       b.type = "button"; b.className = "cls";
       b.setAttribute("aria-pressed", state.grade === x.g ? "true" : "false");
-      b.innerHTML =
-        '<div class="top"><span class="dot" style="background:' + PAL[i % PAL.length] + '"></span><span>' + esc(gradeLabel(x.g)) + '</span><span class="tot">' + nf(tot) + '</span></div>' +
-        '<div class="sub">' + IC_M + ' ' + nf(x.m) + ' <span style="opacity:.35">·</span> ' + IC_F + ' ' + nf(x.f) + '</div>' +
-        '<div class="pct">' + pct(tot, total) + '%</div>';
+      b.innerHTML = '<span class="dot" style="background:' + PAL[i % PAL.length] + '"></span><span class="num">' + esc(x.g) + '</span>';
+      b.title = gradeLabel(x.g) + ' · ' + nf(tot);
       b.addEventListener("click", function () { pickGrade(x.g); });
       box.appendChild(b);
-      if (state.grade === x.g) box.appendChild(buildExpansion(x.g));
+      if (state.grade === x.g) box.appendChild(buildExpansion(x, total));
     });
     state._grades = grades;
     renderStudentsCard();
   }
-  function buildExpansion(g) {
+  function buildExpansion(x, total) {
+    var g = x.g, tot = x.m + x.f;
     var ex = document.createElement("div"); ex.className = "cls-open";
     var head = document.createElement("div"); head.className = "cls-open-head";
+    var info = document.createElement("div"); info.className = "cls-open-info";
     var h = document.createElement("h3"); h.textContent = gradeLabel(g);
+    var sub = document.createElement("div"); sub.className = "cls-open-sub";
+    sub.innerHTML = IC_M + ' ' + nf(x.m) + ' <span style="opacity:.35">·</span> ' + IC_F + ' ' + nf(x.f) +
+      ' <span style="opacity:.35">·</span> ' + nf(tot) + ' ' + (state.lang === "km" ? "នាក់" : "students") + ' (' + pct(tot, total) + '%)';
+    info.appendChild(h); info.appendChild(sub);
     var btn = document.createElement("button"); btn.type = "button"; btn.className = "btn ghost";
     btn.textContent = t("clear");
     btn.addEventListener("click", function () { pickGrade(g); });
-    head.appendChild(h); head.appendChild(btn);
+    head.appendChild(info); head.appendChild(btn);
     var list = document.createElement("div"); list.className = "list"; list.style.marginTop = "0";
     ex.appendChild(head); ex.appendChild(list);
     return ex;
