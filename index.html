@@ -50,11 +50,11 @@ button, input, select { font: inherit; color: inherit; }
 .row-tabs > .seg:first-child { grid-column: 2; }
 .row-tabs > .seg:last-child { grid-column: 3; justify-self: end; }
 @media (max-width: 560px) { .row-tabs { grid-template-columns: 1fr; justify-items: center; } .row-tabs > .seg:first-child, .row-tabs > .seg:last-child { grid-column: 1; justify-self: center; } }
-.hero { padding: 24px 0 4px; }
-.hero h1 { margin: 0; font-family: var(--latin); font-size: clamp(40px, 8vw, 64px); font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
+.hero { padding: 24px 0 4px; text-align: center; }
+.hero h1 { display: inline-flex; align-items: center; gap: 14px; margin: 0; font-family: var(--latin); font-size: clamp(40px, 8vw, 64px); font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
 html[lang="km"] .hero h1 { font-family: "Battambang", "Kantumruy Pro", serif; font-weight: 700; letter-spacing: 0; line-height: 1.15; }
 
-.search { margin-top: 18px; display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: 999px; padding: 2px 14px; max-width: 360px; }
+.search { margin: 18px auto 0; display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: 999px; padding: 2px 14px; max-width: 360px; }
 .search input { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; font-size: 14px; padding: 7px 0; color: var(--ink); }
 .search input::placeholder { color: var(--ink-2); }
 .search:focus-within { box-shadow: 0 0 0 3px var(--focus); }
@@ -123,8 +123,11 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
 .field label { font-size: 14px; color: var(--ink-2); }
 .field input, .field select { border: 0; background: var(--track); border-radius: 14px; padding: 14px 16px; font-size: 16px; outline: none; color: var(--ink); min-height: 50px; width: 100%; }
 .field input:focus { box-shadow: 0 0 0 3px var(--focus); }
-.gate { display: grid; gap: 14px; max-width: 440px; }
+.gate { display: grid; gap: 14px; max-width: 440px; margin: 0 auto; width: 100%; }
 .gate .big { font-family: var(--latin); font-size: 34px; font-weight: 700; letter-spacing: -0.03em; }
+.h-ic { width: .62em; height: .62em; flex: none; }
+.tab-ic { width: 16px; height: 16px; flex: none; margin-inline-end: 6px; }
+.row-tabs .seg button { display: inline-flex; align-items: center; justify-content: center; }
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
 @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
 .rowc { display: grid; grid-template-columns: 62px minmax(0,1fr) auto; gap: 12px; align-items: center; padding: 10px 2px; border-top: 1px solid var(--hair); }
@@ -354,7 +357,8 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
   function applyStatic() {
     document.documentElement.lang = state.lang === "km" ? "km" : "en";
     document.querySelectorAll("[data-tab]").forEach(function (b) {
-      b.textContent = b.getAttribute("data-tab") === "find" ? t("tabFind") : t("tabAdmin");
+      if (b.getAttribute("data-tab") === "find") b.textContent = t("tabFind");
+      else b.innerHTML = icKey() + '<span>' + esc(t("tabAdmin")) + '</span>';
     });
     document.querySelectorAll("[data-i18n]").forEach(function (el) { el.textContent = t(el.getAttribute("data-i18n")); });
     $("theme").textContent = t("theme");
@@ -374,9 +378,12 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
     renderLookup();
     if (state.admin) renderAdmin();
   }
+  function icStu() { return '<svg class="h-ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3zM5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>'; }
+  function icKey() { return '<svg class="tab-ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>'; }
   function updateH1() {
-    var admin = !$("view-admin").hidden;
-    $("h1").textContent = admin ? t("h1admin") : t("h1find");
+    var admin = !$("view-admin").hidden, h1 = $("h1");
+    if (admin) h1.textContent = t("h1admin");
+    else { h1.innerHTML = icStu(); h1.appendChild(document.createTextNode(t("h1find"))); }
   }
 
   // ---- data ----
