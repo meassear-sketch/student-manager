@@ -90,6 +90,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
 .cls .cls-text { flex: 1; display: grid; gap: 4px; min-width: 0; }
 .cls .top { font-weight: 700; font-size: 16px; }
 .cls .sub { font-size: 13px; }
+.cls.back { grid-column: 1 / -1; justify-content: center; color: var(--accent); font-weight: 700; font-size: 15px; box-shadow: inset 0 0 0 1px var(--track); }
 .cls .tot { color: var(--ink-2); font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .cls:focus-visible { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--focus); }
 .cls[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--ink); }
@@ -322,7 +323,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
     en: { tabFind: "Search", tabAdmin: "Admin", theme: "Dark / Light", h1find: "Find a student.", h1admin: "Manage.", hint: "Type at least 2 characters", found: "{n} found", empty: "No match", loading: "Loading...", noYears: "No data yet", close: "Close", setupTitle: "Set the password", setupNote: "Set the admin password yourself, at least 12 characters. It is never sent anywhere.", setupBtn: "Set password", loginTitle: "Admin sign-in", loginNote: "Enter the password to continue.", loginBtn: "Sign in", pwLabel: "Password", pwNew: "New password", pwRepeat: "Repeat password", pwCurrent: "Current password", pwEyebrow: "Change password", pwSave: "Save", pwChanged: "Password changed.", yearEyebrow: "School year", yearNote: "Import Excel by year. A sheet named 2026-2027 is used as that year. Deleting a year cannot be undone.", delYear: "Delete the year on screen", importBtn: "Import data", sTotal: "Total students", sGrades: "Grades", byGrade: "Students by class (By Class)", tapHint: "👆 Tap a segment of the chart to see the students in that class", clear: "Clear", ph: "Type a name or ID card number...", dph: "Search by name or student ID...", all: "All grades", gradeLbl: "Grade", id: "ID", sex: "Sex", dob: "Date of birth", stuGroup: "Group", oldNew: "Old/New", old: "Old", newS: "New", male: "Male", female: "Female", sample: "" }
   };
 
-  var state = { lang: "km", years: [], year: null, all: [], students: [], admin: false, adminPw: "", grade: null, q: "", dq: "" };
+  var state = { lang: "km", years: [], year: null, all: [], students: [], admin: false, adminPw: "", grade: null, cls: null, q: "", dq: "" };
   var $ = function (id) { return document.getElementById(id); };
   function t(k) { return I18N[state.lang][k] || k; }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
@@ -450,97 +451,117 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
   }
 
   // ---- admin stats ----
-  function renderAdmin() {
-    var m = 0, f = 0, byGrade = {};
-    state.students.forEach(function (r) {
-      if (r.sex === "M") m++; else if (r.sex === "F") f++;
-      var g = r.grade || "-";
-      byGrade[g] = byGrade[g] || { g: g, m: 0, f: 0 };
-      if (r.sex === "M") byGrade[g].m++; else if (r.sex === "F") byGrade[g].f++;
+  function levelOf(g) { var m = String(g || "-").match(/^\d+/); return m ? m[0] : String(g || "-"); }
+  function bucket(list, keyFn) {
+    var map = {}, out = [];
+    list.forEach(function (r) {
+      var k = keyFn(r);
+      if (!map[k]) { map[k] = { g: k, m: 0, f: 0 }; out.push(map[k]); }
+      if (r.sex === "M") map[k].m++; else if (r.sex === "F") map[k].f++;
     });
-    var grades = Object.keys(byGrade).map(function (k) { return byGrade[k]; })
-      .sort(function (a, b) { return gradeKey(a.g) - gradeKey(b.g) || String(a.g).localeCompare(String(b.g)); });
+    return out.sort(function (a, b) { return String(a.g).localeCompare(String(b.g), undefined, { numeric: true, sensitivity: "base" }); });
+  }
+  function syncDock() { $("dgrade").value = state.cls || ""; }
+  function pickLevel(lv) { state.grade = state.grade === lv ? null : lv; state.cls = null; syncDock(); renderAdmin(); }
+  function pickClass(c) { state.cls = state.cls === c ? null : c; syncDock(); renderAdmin(); }
+  function renderAdmin() {
+    var m = 0, f = 0;
+    state.students.forEach(function (r) { if (r.sex === "M") m++; else if (r.sex === "F") f++; });
     var total = state.students.length;
+    var levels = bucket(state.students, function (r) { return levelOf(r.grade); });
     $("s-total").textContent = nf(total);
-    $("s-grades").textContent = nf(grades.length);
+    $("s-grades").textContent = nf(levels.length);
     $("s-f").textContent = nf(f);
     $("s-m").textContent = nf(m);
 
-    drawDonut(grades, total);
+    var isLevel = state.grade === null, items, base, headLabel, selKey, onPick;
+    if (isLevel) {
+      items = levels; base = total; headLabel = t("sTotal"); selKey = null;
+      onPick = function (x) { pickLevel(x.g); };
+    } else {
+      var inLevel = state.students.filter(function (r) { return levelOf(r.grade) === state.grade; });
+      items = bucket(inLevel, function (r) { return r.grade || "-"; });
+      base = inLevel.length; headLabel = gradeLabel(state.grade); selKey = state.cls;
+      onPick = function (x) { pickClass(x.g); };
+    }
+    drawDonut(items, base, selKey, headLabel, onPick);
+
     var box = $("classes"); box.innerHTML = "";
-    grades.forEach(function (x, i) {
+    var unit = state.lang === "km" ? "នាក់" : "students";
+    if (!isLevel) {
+      var back = document.createElement("button");
+      back.type = "button"; back.className = "cls back";
+      back.textContent = "← " + (state.lang === "km" ? "ថ្នាក់ទាំងអស់" : "All classes");
+      back.addEventListener("click", function () { pickLevel(state.grade); });
+      box.appendChild(back);
+    }
+    items.forEach(function (x, i) {
       var tot = x.m + x.f;
+      var label = isLevel ? gradeLabel(x.g) : x.g;
       var b = document.createElement("button");
       b.type = "button"; b.className = "cls";
-      b.setAttribute("aria-pressed", state.grade === x.g ? "true" : "false");
-      var unit = state.lang === "km" ? "នាក់" : "students";
+      b.setAttribute("aria-pressed", !isLevel && state.cls === x.g ? "true" : "false");
       b.innerHTML =
         '<span class="dot" style="background:' + PAL[i % PAL.length] + '"></span>' +
-        '<span class="cls-text"><span class="top">' + esc(gradeLabel(x.g)) + '</span>' +
+        '<span class="cls-text"><span class="top">' + esc(label) + '</span>' +
         '<span class="sub">' + esc(t("male")) + ' ' + nf(x.m) + ' · ' + esc(t("female")) + ' ' + nf(x.f) + '</span></span>' +
-        '<span class="tot">' + nf(tot) + ' ' + unit + ' (' + pct(tot, total) + '%)</span>';
-      b.addEventListener("click", function () { pickGrade(x.g); });
+        '<span class="tot">' + nf(tot) + ' ' + unit + ' (' + pct(tot, base) + '%)</span>';
+      b.addEventListener("click", function () { onPick(x); });
       box.appendChild(b);
-      if (state.grade === x.g) box.appendChild(buildExpansion(x, total));
+      if (!isLevel && state.cls === x.g) box.appendChild(buildExpansion(x, label, base));
     });
-    state._grades = grades;
     renderStudentsCard();
   }
-  function buildExpansion(x, total) {
-    var g = x.g, tot = x.m + x.f;
+  function buildExpansion(x, label, base) {
+    var tot = x.m + x.f;
     var ex = document.createElement("div"); ex.className = "cls-open";
     var head = document.createElement("div"); head.className = "cls-open-head";
     var info = document.createElement("div"); info.className = "cls-open-info";
-    var h = document.createElement("h3"); h.textContent = gradeLabel(g);
+    var h = document.createElement("h3"); h.textContent = label;
     var sub = document.createElement("div"); sub.className = "cls-open-sub";
     sub.innerHTML = IC_M + ' ' + nf(x.m) + ' <span style="opacity:.35">·</span> ' + IC_F + ' ' + nf(x.f) +
-      ' <span style="opacity:.35">·</span> ' + nf(tot) + ' ' + (state.lang === "km" ? "នាក់" : "students") + ' (' + pct(tot, total) + '%)';
+      ' <span style="opacity:.35">·</span> ' + nf(tot) + ' ' + (state.lang === "km" ? "នាក់" : "students") + ' (' + pct(tot, base) + '%)';
     info.appendChild(h); info.appendChild(sub);
     var btn = document.createElement("button"); btn.type = "button"; btn.className = "btn ghost";
     btn.textContent = t("clear");
-    btn.addEventListener("click", function () { pickGrade(g); });
+    btn.addEventListener("click", function () { pickClass(x.g); });
     head.appendChild(info); head.appendChild(btn);
     var list = document.createElement("div"); list.className = "list"; list.style.marginTop = "0";
     ex.appendChild(head); ex.appendChild(list);
     return ex;
   }
-  function drawDonut(grades, total) {
+  function drawDonut(items, base, selKey, headLabel, onPick) {
     var svg = $("donut"); svg.innerHTML = "";
     var cx = 100, cy = 100, r = 78, sw = 30, C = 2 * Math.PI * r, offset = 0;
-    grades.forEach(function (x, i) {
-      var v = x.m + x.f, len = total ? C * (v / total) : 0;
+    items.forEach(function (x, i) {
+      var v = x.m + x.f, len = base ? C * (v / base) : 0;
       var c = document.createElementNS(NS, "circle");
       c.setAttribute("cx", cx); c.setAttribute("cy", cy); c.setAttribute("r", r);
       c.setAttribute("fill", "none"); c.setAttribute("stroke-width", sw);
       c.setAttribute("stroke-dasharray", Math.max(0, len - 2) + " " + (C - len + 2));
       c.setAttribute("stroke-dashoffset", -offset);
       c.setAttribute("transform", "rotate(-90 " + cx + " " + cy + ")");
-      c.style.stroke = state.grade === null || state.grade === x.g ? PAL[i % PAL.length] : "var(--track)";
+      c.style.stroke = selKey === null || selKey === x.g ? PAL[i % PAL.length] : "var(--track)";
       c.setAttribute("class", "arc");
       c.setAttribute("role", "button"); c.setAttribute("tabindex", "0");
-      c.addEventListener("click", function () { pickGrade(x.g); });
-      c.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pickGrade(x.g); } });
+      c.addEventListener("click", function () { onPick(x); });
+      c.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onPick(x); } });
       svg.appendChild(c);
       offset += len;
     });
-    var sel = state.grade === null ? null : grades.filter(function (x) { return x.g === state.grade; })[0];
+    var sel = selKey === null ? null : items.filter(function (x) { return x.g === selKey; })[0];
     var big = document.createElementNS(NS, "text");
     big.setAttribute("x", cx); big.setAttribute("y", cy + 6); big.setAttribute("text-anchor", "middle");
     big.setAttribute("font-family", "Inter, system-ui, sans-serif"); big.setAttribute("font-size", "26"); big.setAttribute("font-weight", "700");
     big.style.fill = "var(--ink)";
-    big.textContent = nf(sel ? sel.m + sel.f : total);
+    big.textContent = nf(sel ? sel.m + sel.f : base);
     svg.appendChild(big);
     var sub = document.createElementNS(NS, "text");
     sub.setAttribute("x", cx); sub.setAttribute("y", cy + 24); sub.setAttribute("text-anchor", "middle");
     sub.setAttribute("font-family", "Kantumruy Pro, sans-serif"); sub.setAttribute("font-size", "11");
     sub.style.fill = "var(--ink-2)";
-    sub.textContent = sel ? gradeLabel(sel.g) : t("sTotal");
+    sub.textContent = sel ? sel.g : headLabel;
     svg.appendChild(sub);
-  }
-  function pickGrade(g) {
-    state.grade = state.grade === g ? null : g;
-    $("dgrade").value = state.grade === null ? "" : state.grade;
-    renderAdmin();
   }
   function renderStudentsCard() {
     var box = document.querySelector("#classes .cls-open .list");
@@ -548,7 +569,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
     box.innerHTML = "";
     var q = $("dq").value.trim();
     var rows = state.students.filter(function (r) {
-      if (String(r.grade || "-") !== String(state.grade)) return false;
+      if (String(r.grade || "-") !== String(state.cls)) return false;
       return !q || matchRow(r, q);
     });
     if (!rows.length) { var e = document.createElement("div"); e.className = "note"; e.textContent = t("empty"); box.appendChild(e); return; }
@@ -798,7 +819,8 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
   $("dq").addEventListener("input", function () { state.dq = $("dq").value; renderStudentsCard(); });
   $("dgrade").addEventListener("change", function () {
     var v = $("dgrade").value;
-    state.grade = v === "" ? null : v;
+    state.cls = v === "" ? null : v;
+    state.grade = v === "" ? null : levelOf(v);
     renderAdmin();
   });
   $("year").addEventListener("change", async function () {
