@@ -46,7 +46,10 @@ button, input, select { font: inherit; color: inherit; }
 .seg button { border: 0; background: transparent; color: var(--ink); cursor: pointer; padding: 10px 18px; border-radius: 999px; min-height: 44px; font-size: 15px; font-weight: 500; white-space: nowrap; }
 .seg button[aria-pressed="true"], .seg button[aria-selected="true"] { background: var(--pill); color: var(--pill-fg); font-weight: 600; }
 .seg.small button { padding: 7px 14px; min-height: 36px; font-size: 14px; }
-.row-tabs { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 24px; }
+.row-tabs { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; margin-top: 24px; }
+.row-tabs > .seg:first-child { grid-column: 2; }
+.row-tabs > .seg:last-child { grid-column: 3; justify-self: end; }
+@media (max-width: 560px) { .row-tabs { grid-template-columns: 1fr; justify-items: center; } .row-tabs > .seg:first-child, .row-tabs > .seg:last-child { grid-column: 1; justify-self: center; } }
 .hero { padding: 24px 0 4px; }
 .hero h1 { margin: 0; font-family: var(--latin); font-size: clamp(40px, 8vw, 64px); font-weight: 700; letter-spacing: -0.04em; line-height: 1; }
 html[lang="km"] .hero h1 { font-family: "Battambang", "Kantumruy Pro", serif; font-weight: 700; letter-spacing: 0; line-height: 1.15; }
@@ -92,6 +95,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
 .cls .sub { font-size: 13px; }
 .cls.back { grid-column: 1 / -1; justify-content: center; color: var(--accent); font-weight: 700; font-size: 15px; box-shadow: inset 0 0 0 1px var(--track); }
 .cls .tot { color: var(--ink-2); font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cls .sub .ic { width: 16px; height: 16px; vertical-align: -3px; }
 .cls:focus-visible { box-shadow: 0 0 0 3px var(--surface), 0 0 0 5px var(--focus); }
 .cls[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--ink); }
 .cls .top { display: flex; align-items: center; gap: 8px; font-weight: 700; }
@@ -469,8 +473,9 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
     state.students.forEach(function (r) { if (r.sex === "M") m++; else if (r.sex === "F") f++; });
     var total = state.students.length;
     var levels = bucket(state.students, function (r) { return levelOf(r.grade); });
+    var classCount = bucket(state.students, function (r) { return r.grade || "-"; }).length;
     $("s-total").textContent = nf(total);
-    $("s-grades").textContent = nf(levels.length);
+    $("s-grades").textContent = nf(classCount);
     $("s-f").textContent = nf(f);
     $("s-m").textContent = nf(m);
 
@@ -504,7 +509,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
       b.innerHTML =
         '<span class="dot" style="background:' + PAL[i % PAL.length] + '"></span>' +
         '<span class="cls-text"><span class="top">' + esc(label) + '</span>' +
-        '<span class="sub">' + esc(t("male")) + ' ' + nf(x.m) + ' · ' + esc(t("female")) + ' ' + nf(x.f) + '</span></span>' +
+        '<span class="sub">' + IC_M + ' ' + esc(t("male")) + ' ' + nf(x.m) + ' · ' + IC_F + ' ' + esc(t("female")) + ' ' + nf(x.f) + '</span></span>' +
         '<span class="tot">' + nf(tot) + ' ' + unit + ' (' + pct(tot, base) + '%)</span>';
       b.addEventListener("click", function () { onPick(x); });
       box.appendChild(b);
