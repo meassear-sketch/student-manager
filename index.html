@@ -80,8 +80,8 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
 .head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
 .head h2 { margin: 0; font-size: 19px; font-weight: 700; }
 .hint { color: var(--ink-2); font-size: 13px; }
-.by { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0,1fr); gap: 22px; align-items: center; }
-.donut { width: 100%; max-width: 280px; height: auto; display: block; margin: 0 auto; }
+.by { display: grid; grid-template-columns: minmax(220px, 300px) minmax(0,1fr); gap: 22px; align-items: start; }
+.donut { width: 100%; max-width: 280px; height: auto; display: block; margin: 0 auto; position: sticky; top: 90px; }
 .arc { cursor: pointer; transition: opacity .2s ease; }
 .donut:hover .arc { opacity: .45; }
 .donut .arc:hover { opacity: 1; }
