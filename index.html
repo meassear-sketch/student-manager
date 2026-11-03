@@ -745,7 +745,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
   }
   async function uploadPhotos(files) {
     var list = Array.prototype.slice.call(files);
-    var ok = 0, miss = 0, fail = 0, stop = null;
+    var ok = 0, miss = 0, fail = 0, stop = null, badNames = [];
     for (var i = 0; i < list.length && !stop; i++) {
       var f = list[i];
       var sid = f.name.replace(/[.][^.]+$/, "").trim();
@@ -757,7 +757,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
           var code = r.status;
           if (code === 401) stop = state.lang === "km" ? "លេខសម្ងាត់មិនត្រឹមត្រូវ" : "Wrong password";
           else if (code === 423) stop = lockMsg({ message: "too many attempts" });
-          else fail++;
+          else { fail++; if (code === 400 && badNames.length < 5) badNames.push(sid); }
         } else if (r.data && r.data.rows > 0) ok++;
         else miss++;
       } catch (e) { fail++; }
@@ -770,6 +770,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
       var msg = (state.lang === "km" ? "បានបញ្ចូល " : "Uploaded ") + ok;
       if (miss) msg += (state.lang === "km" ? " · គ្មានអត្តលេខក្នុងបញ្ជី " : " · no matching ID ") + miss;
       if (fail) msg += (state.lang === "km" ? " · បរាជ័យ " : " · failed ") + fail;
+      if (badNames.length) msg += (state.lang === "km" ? " · ឈ្មោះមិនត្រឹមត្រូវ៖ " : " · bad names: ") + badNames.join(", ");
       setPStatus(msg, miss > 0 || fail > 0);
     }
     await init(true);
