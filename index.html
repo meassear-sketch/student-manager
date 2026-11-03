@@ -123,14 +123,14 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
 .field label { font-size: 14px; color: var(--ink-2); }
 .field input, .field select { border: 0; background: var(--track); border-radius: 14px; padding: 14px 16px; font-size: 16px; outline: none; color: var(--ink); min-height: 50px; width: 100%; }
 .field input:focus { box-shadow: 0 0 0 3px var(--focus); }
-.gate { display: grid; gap: 0; max-width: 440px; margin: 0 auto; width: 100%; padding: 36px 28px 28px; text-align: center; justify-items: stretch; }
-.lock-ic { width: 72px; height: 90px; margin: 0 auto 14px; }
+.gate { display: grid; gap: 0; max-width: 340px; margin: 0 auto; width: 100%; padding: 26px 22px 22px; text-align: center; justify-items: stretch; }
+.lock-ic { width: 52px; height: 64px; margin: 0 auto 10px; }
 .lock-ic svg { width: 100%; height: 100%; display: block; }
-.gate-title { font-size: 21px; font-weight: 700; margin-bottom: 26px; letter-spacing: -0.01em; }
-.gate .pin { width: 100%; box-sizing: border-box; height: 64px; border: 0; border-radius: 16px; background: var(--canvas); color: var(--ink); font-size: 22px; text-align: center; letter-spacing: .35em; outline: none; }
+.gate-title { font-size: 17px; font-weight: 700; margin-bottom: 18px; letter-spacing: -0.01em; }
+.gate .pin { width: 100%; box-sizing: border-box; height: 48px; border: 0; border-radius: 14px; background: var(--canvas); color: var(--ink); font-size: 18px; text-align: center; letter-spacing: .35em; outline: none; }
 .gate .pin:focus { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px #2E6B77; }
 .gate .note.bad { margin-top: 12px; }
-.gate .btn.teal { width: 100%; height: 60px; margin-top: 34px; border-radius: 16px; background: #2E6B77; color: #fff; font-size: 18px; min-height: 60px; }
+.gate .btn.teal { width: 100%; height: 46px; margin-top: 20px; border-radius: 14px; background: #2E6B77; color: #fff; font-size: 16px; min-height: 46px; }
 .gate .big { font-family: var(--latin); font-size: 34px; font-weight: 700; letter-spacing: -0.03em; }
 .h-ic { width: .62em; height: .62em; flex: none; }
 .tab-ic { width: 16px; height: 16px; flex: none; margin-inline-end: 6px; }
@@ -389,8 +389,8 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
   function icKey() { return '<svg class="tab-ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>'; }
   function updateH1() {
     var admin = !$("view-admin").hidden, h1 = $("h1");
-    if (admin) h1.textContent = t("h1admin");
-    else { h1.innerHTML = icStu(); h1.appendChild(document.createTextNode(t("h1find"))); }
+    h1.closest(".hero").hidden = admin;
+    if (!admin) { h1.innerHTML = icStu(); h1.appendChild(document.createTextNode(t("h1find"))); }
   }
 
   // ---- data ----
