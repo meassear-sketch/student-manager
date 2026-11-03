@@ -94,6 +94,11 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
 .cls .sub { color: var(--ink-2); font-size: 13px; font-variant-numeric: tabular-nums; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .cls .tot { margin-left: auto; font-family: var(--latin); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .cls .pct { color: var(--ink-2); font-size: 12px; font-family: var(--latin); }
+.cls-open { grid-column: 1 / -1; background: var(--canvas); border-radius: 16px; padding: 14px; display: grid; gap: 10px; animation: clsOpen .25s ease; }
+.cls-open-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cls-open-head h3 { margin: 0; font-size: 16px; font-weight: 700; }
+@keyframes clsOpen { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .cls-open { animation: none; } }
 @media (max-width: 720px) {
   .stats { grid-template-columns: repeat(2, minmax(0,1fr)); }
   .by { grid-template-columns: minmax(0,1fr); }
@@ -215,14 +220,6 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
           <svg id="donut" class="donut" viewBox="0 0 200 200" role="img" aria-label="grades"></svg>
           <div class="classes" id="classes"></div>
         </div>
-      </div>
-
-      <div class="card" id="students-card" hidden>
-        <div class="head">
-          <h2 id="students-title"></h2>
-          <button class="btn ghost" type="button" id="clear" data-i18n="clear"></button>
-        </div>
-        <div class="list" id="students" style="margin-top:0"></div>
       </div>
 
       <div class="grid2">
@@ -476,9 +473,22 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
         '<div class="pct">' + pct(tot, total) + '%</div>';
       b.addEventListener("click", function () { pickGrade(x.g); });
       box.appendChild(b);
+      if (state.grade === x.g) box.appendChild(buildExpansion(x.g));
     });
     state._grades = grades;
     renderStudentsCard();
+  }
+  function buildExpansion(g) {
+    var ex = document.createElement("div"); ex.className = "cls-open";
+    var head = document.createElement("div"); head.className = "cls-open-head";
+    var h = document.createElement("h3"); h.textContent = gradeLabel(g);
+    var btn = document.createElement("button"); btn.type = "button"; btn.className = "btn ghost";
+    btn.textContent = t("clear");
+    btn.addEventListener("click", function () { pickGrade(g); });
+    head.appendChild(h); head.appendChild(btn);
+    var list = document.createElement("div"); list.className = "list"; list.style.marginTop = "0";
+    ex.appendChild(head); ex.appendChild(list);
+    return ex;
   }
   function drawDonut(grades, total) {
     var svg = $("donut"); svg.innerHTML = "";
@@ -519,11 +529,9 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
     renderAdmin();
   }
   function renderStudentsCard() {
-    var card = $("students-card");
-    if (state.grade === null) { card.hidden = true; return; }
-    card.hidden = false;
-    $("students-title").textContent = gradeLabel(state.grade);
-    var box = $("students"); box.innerHTML = "";
+    var box = document.querySelector("#classes .cls-open .list");
+    if (!box) return;
+    box.innerHTML = "";
     var q = $("dq").value.trim();
     var rows = state.students.filter(function (r) {
       if (String(r.grade || "-") !== String(state.grade)) return false;
@@ -779,7 +787,6 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
     state.grade = v === "" ? null : v;
     renderAdmin();
   });
-  $("clear").addEventListener("click", function () { state.grade = null; $("dgrade").value = ""; renderAdmin(); });
   $("year").addEventListener("change", async function () {
     state.year = $("year").value;
     state.grade = null;
