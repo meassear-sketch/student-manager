@@ -664,8 +664,9 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
   // ---- Excel import (one sheet = one academic year) ----
   var HEAD = {
     "nº": "no", "no": "no", "name in english": "name_en", "name in khmer": "name_kh",
-    "student id": "student_id", "sex": "sex", "stugroup": "stu_group", "grade": "grade",
-    "date of birth": "date_of_birth", "old/new": "old_new", "academics": "academics"
+    "student id": "student_id", "sex": "sex", "gender": "sex", "stugroup": "stu_group", "grade": "grade",
+    "date of birth": "date_of_birth", "old/new": "old_new", "academics": "academics",
+    "academicyear": "academics", "academic year": "academics"
   };
   function toIsoDate(v) {
     if (v instanceof Date && !isNaN(v)) return v.toISOString().slice(0, 10);
@@ -684,13 +685,14 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
       var get = function (k) { return idx[k] === undefined ? "" : row[idx[k]]; };
       var sid = String(get("student_id")).trim();
       if (!sid) return;
-      var sex = String(get("sex")).trim().toUpperCase();
+      var sexRaw = String(get("sex")).trim().toLowerCase();
+      var sex = sexRaw === "m" || sexRaw === "male" || sexRaw === "ប្រុស" ? "M" : (sexRaw === "f" || sexRaw === "female" || sexRaw === "ស្រី" ? "F" : "");
       out.push({
         no: get("no") === "" ? null : Number(get("no")),
         name_en: String(get("name_en")).trim(),
         name_kh: String(get("name_kh")).trim(),
         student_id: sid,
-        sex: sex === "M" || sex === "F" ? sex : null,
+        sex: sex || null,
         stu_group: String(get("stu_group")).trim() || null,
         grade: String(get("grade")).trim() || null,
         date_of_birth: toIsoDate(get("date_of_birth")),
