@@ -69,6 +69,18 @@ html[lang="km"] .hero h1 { font-family: "Battambang", "Kantumruy Pro", serif; fo
 .who .kh { color: var(--ink-2); font-size: 14px; overflow-wrap: anywhere; }
 .chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
 .chip { background: var(--track); border-radius: 999px; padding: 4px 11px; font-size: 13px; color: var(--ink); white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
+.rcard { background: var(--surface); border-radius: 22px; padding: 18px 20px; display: grid; gap: 14px; }
+.rtop { display: flex; gap: 16px; align-items: flex-start; min-width: 0; }
+.rtop .ph { width: 84px; flex: none; }
+.rtop .who { min-width: 0; flex: 1; display: grid; gap: 6px; }
+.rtop .who .en { font-family: var(--latin); font-weight: 700; font-size: 18px; line-height: 1.25; overflow-wrap: anywhere; }
+.rids { display: flex; flex-wrap: wrap; gap: 6px; }
+.rdl { display: grid; grid-template-columns: minmax(120px, 42%) minmax(0, 1fr); gap: 10px 16px; margin: 0; font-size: 15px; }
+.rdl dt { color: var(--ink-2); }
+.rdl dd { margin: 0; overflow-wrap: anywhere; }
+.rsep { border-top: 1px dashed var(--track); }
+.rhist { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.rlbl { font-weight: 700; font-size: 14px; margin-inline-end: 4px; }
 mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; padding: 0 2px; }
 .ic { display: inline-block; vertical-align: -5px; width: 24px; height: 24px; }
 .ic-m { color: var(--m); } .ic-f { color: var(--f); }
@@ -441,22 +453,34 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
     return el;
   }
   function studentCard(list, q) {
-    var rep = list[0];
+    var cur = list[0], past = list.slice(1);
     var photoRec = list.filter(function (x) { return x.photo_path; })[0] || null;
     var merged = {};
-    for (var k in rep) merged[k] = rep[k];
+    for (var k in cur) merged[k] = cur[k];
     merged.photo_path = photoRec ? photoRec.photo_path : null;
     var el = document.createElement("article");
-    el.className = "item";
+    el.className = "rcard";
     var img = photoUrl(merged.photo_path);
-    var thumb = img ? '<img src="' + esc(img) + '" alt="">' : esc(ini(rep.name_en));
-    var years = list.map(function (x) {
-      return '<span class="chip latin">' + esc(x.school_year) + ' · ' + esc(gradeLabel(x.grade || "-")) + '</span>';
-    }).join("");
+    var thumb = img ? '<img src="' + esc(img) + '" alt="">' : esc(ini(cur.name_en));
+    var hist = past.length
+      ? '<div class="rsep"></div><div class="rhist"><span class="rlbl">' + (state.lang === "km" ? "ប្រវត្តិឆ្នាំមុន" : "Previous years") + '</span>' +
+        past.map(function (x) {
+          return '<span class="chip latin">' + esc(x.school_year) + ' · ' + esc(x.grade || "-") + (x.stu_group ? ' (' + esc(x.stu_group) + ')' : '') + '</span>';
+        }).join("") + '</div>'
+      : '';
     el.innerHTML =
-      '<button class="ph" type="button">' + thumb + '</button>' +
-      '<div class="who"><div class="en">' + mark(rep.name_en, q) + '</div><div class="kh">' + esc(rep.name_kh || "") + '</div></div>' +
-      '<div class="chips">' + years + '<span class="chip latin">' + mark(rep.student_id, q) + '</span><span class="chip">' + (rep.sex === "M" ? IC_M : IC_F) + '</span></div>';
+      '<div class="rtop"><button class="ph" type="button">' + thumb + '</button>' +
+      '<div class="who"><div class="en">' + mark(cur.name_en, q) + '</div>' +
+      '<div class="kh">' + esc(cur.name_kh || "") + '</div>' +
+      '<div class="rids"><span class="chip latin">' + esc(cur.school_year) + '</span><span class="chip latin">' + mark(cur.student_id, q) + '</span></div></div></div>' +
+      '<dl class="rdl">' +
+        '<dt>Nº</dt><dd class="latin">' + esc(cur.no == null ? "-" : cur.no) + '</dd>' +
+        '<dt>Name in Khmer</dt><dd>' + esc(cur.name_kh || "-") + '</dd>' +
+        '<dt>Sex</dt><dd>' + esc(cur.sex || "-") + '</dd>' +
+        '<dt>StuGroup</dt><dd>' + esc(cur.stu_group || "-") + '</dd>' +
+        '<dt>Grade</dt><dd class="latin">' + esc(cur.grade || "-") + '</dd>' +
+        '<dt>Old/New</dt><dd>' + esc(cur.old_new || "-") + '</dd>' +
+      '</dl>' + hist;
     el.querySelector(".ph").addEventListener("click", function () { openLightbox(merged); });
     return el;
   }
