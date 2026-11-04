@@ -83,6 +83,21 @@ html[lang="km"] .hero h1 { font-family: "Battambang", "Kantumruy Pro", serif; fo
 .rdl dd { margin: 0; overflow-wrap: anywhere; }
 .rhist { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; border-top: 1px dashed var(--track); padding-top: 10px; }
 .rlbl { font-weight: 700; font-size: 13px; margin-inline-end: 2px; }
+.iconbtn { all: unset; cursor: pointer; width: 36px; height: 36px; border-radius: 999px; background: var(--track); display: grid; place-items: center; color: var(--ink); flex: none; }
+.iconbtn.bad { color: var(--bad); }
+.iconbtn:focus-visible, .ed-act .btn:focus-visible, .fld input:focus, .fld select:focus { outline: 2px solid #2E6B77; outline-offset: 1px; }
+.rowacts { display: inline-flex; gap: 6px; }
+#ed[hidden] { display: none; }
+#ed .sheet { width: min(440px, 100%); max-height: 90vh; overflow: auto; }
+.ed-title { margin: 0; font-size: 17px; line-height: 1.35; overflow-wrap: anywhere; }
+.ed-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fld { display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); min-width: 0; }
+.fld.wide { grid-column: 1 / -1; }
+.fld input, .fld select { height: 42px; border: 0; border-radius: 12px; background: var(--track); color: var(--ink); padding: 0 12px; font: inherit; font-size: 15px; width: 100%; min-width: 0; }
+.ed-act { display: flex; gap: 10px; justify-content: flex-end; }
+.ed-act .btn { min-height: 44px; }
+.ed-act .primary { background: #2E6B77; color: #fff; }
+@media (max-width: 420px) { .ed-grid { grid-template-columns: 1fr; } }
 mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; padding: 0 2px; }
 .ic { display: inline-block; vertical-align: -5px; width: 24px; height: 24px; }
 .ic-m { color: var(--m); } .ic-f { color: var(--f); }
@@ -309,6 +324,28 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
     <dl id="lb-info"></dl>
     <button id="lb-close" class="btn" type="button" data-i18n="close" style="justify-self:stretch"></button>
   </div>
+</div>
+
+<div class="lb" id="ed" hidden role="dialog" aria-modal="true">
+  <form class="sheet" id="ed-form" autocomplete="off">
+    <h3 class="ed-title" id="ed-title"></h3>
+    <div class="ed-grid">
+      <label class="fld"><span>Nº</span><input id="ed-no" type="number" min="0" inputmode="numeric"></label>
+      <label class="fld"><span>Sex</span><select id="ed-sex"><option value="">-</option><option value="M">M</option><option value="F">F</option></select></label>
+      <label class="fld wide"><span>Name in English</span><input id="ed-en" required></label>
+      <label class="fld wide"><span>Name in Khmer</span><input id="ed-kh"></label>
+      <label class="fld"><span>StuGroup</span><input id="ed-grp"></label>
+      <label class="fld"><span>Grade</span><input id="ed-grade"></label>
+      <label class="fld"><span>Old/New</span><select id="ed-old"><option value="">-</option><option value="Old">Old</option><option value="New">New</option></select></label>
+      <label class="fld"><span>Date of Birth</span><input id="ed-dob" placeholder="YYYY-MM-DD"></label>
+      <label class="fld wide"><span>AcademicYear</span><input id="ed-acad"></label>
+    </div>
+    <div class="note bad" id="ed-err" hidden></div>
+    <div class="ed-act">
+      <button class="btn ghost" type="button" id="ed-cancel"></button>
+      <button class="btn primary" type="submit" id="ed-save"></button>
+    </div>
+  </form>
 </div>
 
 <script>
@@ -652,7 +689,16 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
       return !q || matchRow(r, q);
     });
     if (!rows.length) { var e = document.createElement("div"); e.className = "note"; e.textContent = t("empty"); box.appendChild(e); return; }
-    rows.slice(0, 300).forEach(function (r) { box.appendChild(studentRow(r, q, true)); });
+    rows.slice(0, 300).forEach(function (r) {
+      var row = studentRow(r, q, true);
+      var acts = document.createElement("span"); acts.className = "rowacts";
+      acts.innerHTML = '<button class="iconbtn" type="button" data-act="edit" title="' + (state.lang === "km" ? "កែប្រែ" : "Edit") + '">' + IC_EDIT + '</button>' +
+        '<button class="iconbtn bad" type="button" data-act="del" title="' + (state.lang === "km" ? "លុប" : "Delete") + '">' + IC_TRASH + '</button>';
+      acts.querySelector('[data-act="edit"]').addEventListener("click", function () { openEditor(r); });
+      acts.querySelector('[data-act="del"]').addEventListener("click", function () { deleteStudent(r); });
+      row.querySelector(".chips").appendChild(acts);
+      box.appendChild(row);
+    });
   }
   function buildGradeSelect() {
     var sel = $("dgrade"), prev = sel.value;
@@ -908,6 +954,54 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
     setStatus(state.lang === "km" ? "បានលុប " + r.data + " ជួរ" : "Deleted " + r.data + " rows");
     await init(true);
   });
+
+  // ---- admin: edit / delete one student (one school year) ----
+  var IC_EDIT = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+  var IC_TRASH = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>';
+  var ED_FIELDS = [["no", "ed-no"], ["name_en", "ed-en"], ["name_kh", "ed-kh"], ["sex", "ed-sex"], ["stu_group", "ed-grp"], ["grade", "ed-grade"], ["old_new", "ed-old"], ["date_of_birth", "ed-dob"], ["academics", "ed-acad"]];
+  var editing = null;
+  function openEditor(r) {
+    var km = state.lang === "km";
+    editing = { year: r.school_year, sid: r.student_id };
+    $("ed-title").textContent = (km ? "កែប្រែសិស្ស " : "Edit student ") + r.student_id + " · " + (r.school_year || "");
+    $("ed-cancel").textContent = km ? "បោះបង់" : "Cancel";
+    $("ed-save").textContent = km ? "រក្សាទុក" : "Save";
+    $("ed-err").hidden = true;
+    ED_FIELDS.forEach(function (f) { var v = r[f[0]]; $(f[1]).value = v == null ? "" : String(v); });
+    $("ed").hidden = false;
+    $("ed-en").focus();
+  }
+  function closeEditor() { $("ed").hidden = true; editing = null; }
+  $("ed-cancel").addEventListener("click", closeEditor);
+  $("ed").addEventListener("click", function (e) { if (e.target === $("ed")) closeEditor(); });
+  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("ed").hidden) closeEditor(); });
+  $("ed-form").addEventListener("submit", async function (e) {
+    e.preventDefault();
+    if (!editing) return;
+    var km = state.lang === "km", err = $("ed-err");
+    err.hidden = true;
+    var fields = {};
+    ED_FIELDS.forEach(function (f) { fields[f[0]] = $(f[1]).value.trim(); });
+    function fail(msg) { err.textContent = msg; err.hidden = false; }
+    if (!fields.name_en) return fail(km ? "សូមបញ្ចូលឈ្មោះអង់គ្លេស" : "Name in English is required");
+    if (fields.no && !/^\d+$/.test(fields.no)) return fail(km ? "Nº ត្រូវតែជាលេខ" : "Nº must be a number");
+    if (fields.date_of_birth && !/^\d{4}-\d{2}-\d{2}$/.test(fields.date_of_birth)) return fail(km ? "ថ្ងៃកំណើតត្រូវតែជា YYYY-MM-DD" : "Date of birth must be YYYY-MM-DD");
+    var r = await rpc("admin_update_student", { pw: state.adminPw, p_year: editing.year, p_student_id: editing.sid, fields: fields });
+    if (r.error) return fail(lockMsg(r.error));
+    if (r.data === -1) return fail(km ? "លេខសម្ងាត់មិនត្រឹមត្រូវ" : "Wrong password");
+    if (!r.data) return fail(km ? "រកមិនឃើញសិស្សនេះទេ" : "Student not found");
+    closeEditor();
+    setStatus(km ? "បានរក្សាទុក" : "Saved");
+    await init(true);
+  });
+  async function deleteStudent(r) {
+    var km = state.lang === "km";
+    if (!confirm((km ? "លុបសិស្ស " : "Delete student ") + r.name_en + " (" + r.student_id + ", " + r.school_year + ")?")) return;
+    var res = await rpc("admin_delete_student", { pw: state.adminPw, p_year: r.school_year, p_student_id: r.student_id });
+    if (res.error || res.data === -1) { setStatus(res.error ? lockMsg(res.error) : (km ? "លេខសម្ងាត់មិនត្រឹមត្រូវ" : "Wrong password"), true); return; }
+    setStatus(km ? "បានលុប" : "Deleted");
+    await init(true);
+  }
 
   // ---- wiring ----
   $("q").addEventListener("input", renderLookup);
