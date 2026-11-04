@@ -603,6 +603,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
     drawDonut(items, base, selKey, headLabel, onPick);
 
     var box = $("classes"); box.innerHTML = "";
+    if ($("dq").value.trim().length >= 2) { renderAdminSearch(box); return; }
     var unit = state.lang === "km" ? "នាក់" : "students";
     if (!isLevel) {
       var back = document.createElement("button");
@@ -627,6 +628,39 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
       if (!isLevel && state.cls === x.g) box.appendChild(buildExpansion(x, label, base));
     });
     renderStudentsCard();
+  }
+  function adminRow(r, q, withYear) {
+    var row = studentRow(r, q, true, withYear);
+    var acts = document.createElement("span"); acts.className = "rowacts";
+    acts.innerHTML = '<button class="iconbtn" type="button" data-act="edit" title="' + (state.lang === "km" ? "កែប្រែ" : "Edit") + '">' + IC_EDIT + '</button>' +
+      '<button class="iconbtn bad" type="button" data-act="del" title="' + (state.lang === "km" ? "លុប" : "Delete") + '">' + IC_TRASH + '</button>';
+    acts.querySelector('[data-act="edit"]').addEventListener("click", function () { openEditor(r); });
+    acts.querySelector('[data-act="del"]').addEventListener("click", function () { deleteStudent(r); });
+    row.querySelector(".chips").appendChild(acts);
+    return row;
+  }
+  function renderAdminSearch(box) {
+    var q = $("dq").value.trim(), km = state.lang === "km";
+    var rows = state.all.filter(function (r) { return matchRow(r, q); }).sort(function (a, b) {
+      var n = String(a.name_en).localeCompare(String(b.name_en));
+      return n || (a.school_year < b.school_year ? 1 : a.school_year > b.school_year ? -1 : 0);
+    });
+    var card = document.createElement("div"); card.className = "cls-open";
+    var head = document.createElement("div"); head.className = "cls-open-head";
+    var info = document.createElement("div"); info.className = "cls-open-info";
+    var h = document.createElement("h3"); h.textContent = (km ? "លទ្ធផលស្វែងរក · " : "Search · ") + q;
+    var sub = document.createElement("div"); sub.className = "cls-open-sub";
+    sub.textContent = t("found").replace("{n}", nf(rows.length)) + (km ? " (គ្រប់ឆ្នាំ)" : " (all years)");
+    info.appendChild(h); info.appendChild(sub); head.appendChild(info); card.appendChild(head);
+    var list = document.createElement("div"); list.className = "list"; list.style.marginTop = "0";
+    if (!rows.length) { var e = document.createElement("div"); e.className = "note"; e.textContent = t("empty"); list.appendChild(e); }
+    rows.slice(0, 300).forEach(function (r) { list.appendChild(adminRow(r, q, true)); });
+    if (rows.length > 300) {
+      var more = document.createElement("div"); more.className = "note";
+      more.textContent = km ? "បង្ហាញ 300 ដំបូង — វាយឲ្យច្បាស់ជាងនេះ" : "Showing first 300 — type more to narrow down";
+      list.appendChild(more);
+    }
+    card.appendChild(list); box.appendChild(card);
   }
   function buildExpansion(x, label, base) {
     var tot = x.m + x.f;
@@ -689,16 +723,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
       return !q || matchRow(r, q);
     });
     if (!rows.length) { var e = document.createElement("div"); e.className = "note"; e.textContent = t("empty"); box.appendChild(e); return; }
-    rows.slice(0, 300).forEach(function (r) {
-      var row = studentRow(r, q, true);
-      var acts = document.createElement("span"); acts.className = "rowacts";
-      acts.innerHTML = '<button class="iconbtn" type="button" data-act="edit" title="' + (state.lang === "km" ? "កែប្រែ" : "Edit") + '">' + IC_EDIT + '</button>' +
-        '<button class="iconbtn bad" type="button" data-act="del" title="' + (state.lang === "km" ? "លុប" : "Delete") + '">' + IC_TRASH + '</button>';
-      acts.querySelector('[data-act="edit"]').addEventListener("click", function () { openEditor(r); });
-      acts.querySelector('[data-act="del"]').addEventListener("click", function () { deleteStudent(r); });
-      row.querySelector(".chips").appendChild(acts);
-      box.appendChild(row);
-    });
+    rows.slice(0, 300).forEach(function (r) { box.appendChild(adminRow(r, q, false)); });
   }
   function buildGradeSelect() {
     var sel = $("dgrade"), prev = sel.value;
@@ -1005,7 +1030,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
 
   // ---- wiring ----
   $("q").addEventListener("input", renderLookup);
-  $("dq").addEventListener("input", function () { state.dq = $("dq").value; renderStudentsCard(); });
+  $("dq").addEventListener("input", function () { state.dq = $("dq").value; renderAdmin(); });
   $("dgrade").addEventListener("change", function () {
     var v = $("dgrade").value;
     state.cls = v === "" ? null : v;
