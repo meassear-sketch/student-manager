@@ -377,7 +377,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
     $("del-year").textContent = t("delYear");
     $("drop-t").textContent = state.lang === "km" ? "ចុច ឬទម្លាក់ឯកសារ Excel នៅទីនេះ" : "Tap or drop the Excel file here";
     $("photo-h").textContent = state.lang === "km" ? "នាំចូលរូបថតសិស្ស" : "Import student photos";
-    $("photo-note").textContent = state.lang === "km" ? "ឯកសារត្រូវមានឈ្មោះជាអត្តលេខ (ឧ. 12345.jpg)។ រូបនឹងត្រូវកាត់ជា ៤:៥ ដោយស្វ័យប្រវត្តិ។" : "File names must be the student ID (e.g. 12345.jpg). Photos are cropped to 4:5 automatically.";
+    $("photo-note").textContent = state.lang === "km" ? "ឈ្មោះឯកសារអាចមានឈ្មោះសិស្សផងបាន ឧទាហរណ៍ 26270001 Sok Dara.jpg (កម្មវិធីនឹងយកតែអត្តលេខ)។ រូបនឹងត្រូវកាត់ជា ៤:៥ ដោយស្វ័យប្រវត្តិ។" : "File names must be the student ID (e.g. 12345.jpg). Photos are cropped to 4:5 automatically.";
     $("pdrop-t").textContent = state.lang === "km" ? "ចុច ឬទម្លាក់រូបថតនៅទីនេះ" : "Tap or drop photos here";
     document.querySelectorAll("[data-lang-set]").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-lang-set") === state.lang ? "true" : "false"); });
     buildGradeSelect();
@@ -745,12 +745,23 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
       img.src = url;
     });
   }
+  function photoIdFromName(name, known) {
+    var base = String(name).replace(/[.][^.]+$/, "").trim();
+    if (known[base]) return base;
+    var best = "";
+    Object.keys(known).forEach(function (id) { if (id.length > best.length && base.indexOf(id) >= 0) best = id; });
+    if (best) return best;
+    var m = base.match(/[0-9]{4,}/);
+    return m ? m[0] : base;
+  }
   async function uploadPhotos(files) {
     var list = Array.prototype.slice.call(files);
+    var known = {};
+    state.all.forEach(function (r) { known[r.student_id] = 1; });
     var ok = 0, miss = 0, fail = 0, stop = null, badNames = [];
     for (var i = 0; i < list.length && !stop; i++) {
       var f = list[i];
-      var sid = f.name.replace(/[.][^.]+$/, "").trim();
+      var sid = photoIdFromName(f.name, known);
       setPStatus((i + 1) + " / " + list.length + " · " + sid);
       try {
         var b64 = await compressImage(f);
