@@ -766,13 +766,14 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
   }
   async function uploadPhotos(files) {
     var list = Array.prototype.slice.call(files);
-    var known = {};
-    state.all.forEach(function (r) { known[r.student_id] = 1; });
-    var ok = 0, miss = 0, fail = 0, stop = null, badNames = [];
+    var known = {}, has = {};
+    state.all.forEach(function (r) { known[r.student_id] = 1; if (r.photo_path) has[r.student_id] = 1; });
+    var ok = 0, miss = 0, fail = 0, skip = 0, stop = null, badNames = [];
     for (var i = 0; i < list.length && !stop; i++) {
       var f = list[i];
       var sid = photoIdFromName(f.name, known);
       setPStatus((i + 1) + " / " + list.length + " · " + sid);
+      if (has[sid]) { skip++; setPBar(Math.round(((i + 1) / list.length) * 100)); continue; }
       try {
         var b64 = await compressImage(f);
         var r = await callPhotoFn({ pw: state.adminPw, student_id: sid, data: b64 });
@@ -791,6 +792,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
       setPStatus(stop, true);
     } else {
       var msg = (state.lang === "km" ? "បានបញ្ចូល " : "Uploaded ") + ok;
+      if (skip) msg += (state.lang === "km" ? " · មានរូបរួចហើយ (រក្សាទុក) " : " · kept existing ") + skip;
       if (miss) msg += (state.lang === "km" ? " · គ្មានអត្តលេខក្នុងបញ្ជី " : " · no matching ID ") + miss;
       if (fail) msg += (state.lang === "km" ? " · បរាជ័យ " : " · failed ") + fail;
       if (badNames.length) msg += (state.lang === "km" ? " · ឈ្មោះមិនត្រឹមត្រូវ៖ " : " · bad names: ") + badNames.join(", ");
