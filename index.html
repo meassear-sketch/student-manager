@@ -440,20 +440,49 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
     el.querySelector(".ph").addEventListener("click", function () { openLightbox(r); });
     return el;
   }
+  function studentCard(list, q) {
+    var rep = list[0];
+    var photoRec = list.filter(function (x) { return x.photo_path; })[0] || null;
+    var merged = {};
+    for (var k in rep) merged[k] = rep[k];
+    merged.photo_path = photoRec ? photoRec.photo_path : null;
+    var el = document.createElement("article");
+    el.className = "item";
+    var img = photoUrl(merged.photo_path);
+    var thumb = img ? '<img src="' + esc(img) + '" alt="">' : esc(ini(rep.name_en));
+    var years = list.map(function (x) {
+      return '<span class="chip latin">' + esc(x.school_year) + ' · ' + esc(gradeLabel(x.grade || "-")) + '</span>';
+    }).join("");
+    el.innerHTML =
+      '<button class="ph" type="button">' + thumb + '</button>' +
+      '<div class="who"><div class="en">' + mark(rep.name_en, q) + '</div><div class="kh">' + esc(rep.name_kh || "") + '</div></div>' +
+      '<div class="chips">' + years + '<span class="chip latin">' + mark(rep.student_id, q) + '</span><span class="chip">' + (rep.sex === "M" ? IC_M : IC_F) + '</span></div>';
+    el.querySelector(".ph").addEventListener("click", function () { openLightbox(merged); });
+    return el;
+  }
   function renderLookup() {
     var q = $("q").value.trim();
     var searching = q.length >= 2;
-    var show = searching ? state.all.filter(function (r) { return matchRow(r, q); })
-      .sort(function (a, b) { return a.school_year < b.school_year ? 1 : a.school_year > b.school_year ? -1 : gradeKey(a.grade) - gradeKey(b.grade); }) : [];
+    var matchedIds = {}, groups = {}, order = [];
+    if (searching) state.all.forEach(function (r) { if (matchRow(r, q)) matchedIds[r.student_id] = 1; });
+    if (searching) state.all.forEach(function (r) {
+      if (!matchedIds[r.student_id]) return;
+      if (!groups[r.student_id]) { groups[r.student_id] = []; order.push(r.student_id); }
+      groups[r.student_id].push(r);
+    });
+    order.forEach(function (sid) {
+      groups[sid].sort(function (a, b) { return a.school_year < b.school_year ? 1 : a.school_year > b.school_year ? -1 : 0; });
+    });
+    order.sort(function (a, b) { return String(groups[a][0].name_en).localeCompare(String(groups[b][0].name_en)); });
     $("hint").hidden = searching;
     $("count").hidden = !searching;
-    $("count").textContent = t("found").replace("{n}", show.length);
+    $("count").textContent = t("found").replace("{n}", order.length);
     var box = $("list"); box.innerHTML = "";
-    if (!show.length && searching) { var e = document.createElement("div"); e.className = "note"; e.textContent = t("empty"); box.appendChild(e); }
-    show.slice(0, 300).forEach(function (r) { box.appendChild(studentRow(r, q, false, true)); });
-    if (show.length > 300) {
+    if (!order.length && searching) { var e = document.createElement("div"); e.className = "note"; e.textContent = t("empty"); box.appendChild(e); }
+    order.slice(0, 300).forEach(function (sid) { box.appendChild(studentCard(groups[sid], q)); });
+    if (order.length > 300) {
       var more = document.createElement("div"); more.className = "note";
-      more.textContent = state.lang === "km" ? "បង្ហាញ 300 ដំបូង ក្នុងចំណោម " + nf(show.length) + " — វាយឈ្មោះ ឬអត្តលេខដើម្បីស្វែងរក" : "Showing first 300 of " + nf(show.length) + " — type a name or ID to search";
+      more.textContent = state.lang === "km" ? "បង្ហាញ 300 ដំបូង ក្នុងចំណោម " + nf(order.length) + " — វាយឈ្មោះ ឬអត្តលេខដើម្បីស្វែងរក" : "Showing first 300 of " + nf(order.length) + " — type a name or ID to search";
       box.appendChild(more);
     }
   }
