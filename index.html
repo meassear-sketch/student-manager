@@ -442,14 +442,24 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
   }
   function renderLookup() {
     var q = $("q").value.trim();
-    var show = q.length < 2 ? [] : state.all.filter(function (r) { return matchRow(r, q); })
-      .sort(function (a, b) { return a.school_year < b.school_year ? 1 : a.school_year > b.school_year ? -1 : gradeKey(a.grade) - gradeKey(b.grade); });
-    $("hint").hidden = q.length >= 2;
-    $("count").hidden = q.length < 2;
-    $("count").textContent = t("found").replace("{n}", show.length);
+    var browse = q.length === 0;
+    var pool = browse ? state.students : (q.length >= 2 ? state.all : []);
+    var show = pool.filter(function (r) { return browse || matchRow(r, q); });
+    if (browse) show.sort(function (a, b) { return gradeKey(a.grade) - gradeKey(b.grade) || String(a.grade).localeCompare(String(b.grade), undefined, { numeric: true }) || String(a.student_id).localeCompare(String(b.student_id)); });
+    else show.sort(function (a, b) { return a.school_year < b.school_year ? 1 : a.school_year > b.school_year ? -1 : gradeKey(a.grade) - gradeKey(b.grade); });
+    $("hint").hidden = q.length !== 1;
+    $("count").hidden = !(browse || q.length >= 2);
+    $("count").textContent = browse
+      ? (state.year || "") + " · " + t("found").replace("{n}", show.length)
+      : t("found").replace("{n}", show.length);
     var box = $("list"); box.innerHTML = "";
     if (!show.length && q.length >= 2) { var e = document.createElement("div"); e.className = "note"; e.textContent = t("empty"); box.appendChild(e); }
     show.slice(0, 300).forEach(function (r) { box.appendChild(studentRow(r, q, false, true)); });
+    if (show.length > 300) {
+      var more = document.createElement("div"); more.className = "note";
+      more.textContent = state.lang === "km" ? "បង្ហាញ 300 ដំបូង ក្នុងចំណោម " + nf(show.length) + " — វាយឈ្មោះ ឬអត្តលេខដើម្បីស្វែងរក" : "Showing first 300 of " + nf(show.length) + " — type a name or ID to search";
+      box.appendChild(more);
+    }
   }
   function openLightbox(r) {
     var big = $("lb-big");
