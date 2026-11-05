@@ -105,6 +105,11 @@ html[lang="km"] .hero h1 { font-family: "Battambang", "Kantumruy Pro", serif; fo
 .fl[aria-pressed="true"] { background: var(--pill); color: var(--pill-fg); }
 .fl:focus-visible { outline: 2px solid #2E6B77; outline-offset: 1px; }
 .grp-h { display: flex; justify-content: space-between; gap: 8px; font-weight: 700; font-size: 14px; color: var(--ink-2); padding: 12px 2px 4px; }
+.srow { display: flex; gap: 8px; align-items: center; max-width: 560px; margin: 18px auto 0; }
+.srow { width: 100%; }
+.srow .search { margin: 0; flex: 1 1 0; min-width: 0; max-width: none; }
+#vgrade { height: 40px; border: 0; border-radius: 999px; background: var(--surface); color: var(--ink); padding: 0 14px; font: inherit; font-size: 14px; cursor: pointer; flex: none; max-width: 170px; min-width: 0; }
+#vgrade:focus-visible { outline: 2px solid #2E6B77; outline-offset: 1px; }
 mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; padding: 0 2px; }
 .ic { display: inline-block; vertical-align: -5px; width: 24px; height: 24px; }
 .ic-m { color: var(--m); } .ic-f { color: var(--f); }
@@ -233,7 +238,10 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
 
   <!-- Lookup -->
   <section id="view-find">
-    <label class="search"><input id="q" type="search" autocomplete="off" aria-label="search"></label>
+    <div class="srow">
+      <label class="search"><input id="q" type="search" autocomplete="off" aria-label="search"></label>
+      <select id="vgrade" aria-label="class"></select>
+    </div>
     <div class="note" id="hint"></div>
     <div class="note" id="count" hidden></div>
     <div class="list" id="list"></div>
@@ -395,7 +403,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
     en: { tabFind: "Search", tabAdmin: "Admin", theme: "Dark / Light", h1find: "Find a student.", h1admin: "Manage.", hint: "Type at least 2 characters", found: "{n} found", empty: "No match", loading: "Loading...", noYears: "No data yet", close: "Close", setupTitle: "Set the password", setupNote: "Set the admin password yourself, at least 12 characters. It is never sent anywhere.", setupBtn: "Set password", loginTitle: "Enter the admin PIN", loginNote: "Enter the password to continue.", loginBtn: "Sign in", pwLabel: "Password", pwNew: "New password", pwRepeat: "Repeat password", pwCurrent: "Current password", pwEyebrow: "Change password", pwSave: "Save", pwChanged: "Password changed.", yearEyebrow: "School year", yearNote: "Import Excel by year. A sheet named 2026-2027 is used as that year. Deleting a year cannot be undone.", delYear: "Delete the year on screen", importBtn: "Import data", sTotal: "Total students", sGrades: "Grades", byGrade: "Students by class (By Class)", tapHint: "👆 Tap a segment of the chart to see the students in that class", clear: "Clear", ph: "Type a name or ID card number...", dph: "Search by name or student ID...", all: "All grades", gradeLbl: "Grade", id: "ID", sex: "Sex", dob: "Date of birth", stuGroup: "Group", oldNew: "Old/New", old: "Old", newS: "New", male: "Male", female: "Female", sample: "" }
   };
 
-  var state = { lang: "km", years: [], year: null, all: [], students: [], admin: false, adminPw: "", grade: null, cls: null, q: "", dq: "", sYear: null, sCls: null };
+  var state = { lang: "km", years: [], year: null, all: [], students: [], admin: false, adminPw: "", grade: null, cls: null, q: "", dq: "", sYear: null, sCls: null, vg: "" };
   var $ = function (id) { return document.getElementById(id); };
   function t(k) { return I18N[state.lang][k] || k; }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
@@ -530,10 +538,19 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
     return el;
   }
   function renderLookup() {
-    var q = $("q").value.trim();
-    var searching = q.length >= 2;
+    var q = $("q").value.trim(), vg = state.vg || "";
+    var isCode = /^\d{1,2}[A-Za-z]$/.test(q);
+    var searching = q.length >= 2 || vg !== "";
+    function rowOk(r) {
+      var g = String(r.grade || "-");
+      var byC = vg !== "" && g === vg;
+      var byQ = q.length >= 2 && (matchRow(r, q) || (isCode && g.toUpperCase() === q.toUpperCase()));
+      if (q.length >= 2 && vg !== "") return byQ && byC;
+      if (q.length >= 2) return byQ;
+      return byC;
+    }
     var matchedIds = {}, groups = {}, order = [];
-    if (searching) state.all.forEach(function (r) { if (matchRow(r, q)) matchedIds[r.student_id] = 1; });
+    if (searching) state.all.forEach(function (r) { if (rowOk(r)) matchedIds[r.student_id] = 1; });
     if (searching) state.all.forEach(function (r) {
       if (!matchedIds[r.student_id]) return;
       if (!groups[r.student_id]) { groups[r.student_id] = []; order.push(r.student_id); }
@@ -782,6 +799,19 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
       var o = document.createElement("option"); o.value = g; o.textContent = gradeLabel(g); sel.appendChild(o);
     });
     sel.value = prev || "";
+  }
+
+  function buildViewerGrades() {
+    var sel = $("vgrade"), prev = state.vg || "";
+    sel.innerHTML = "";
+    var all = document.createElement("option"); all.value = ""; all.textContent = state.lang === "km" ? "គ្រប់ថ្នាក់" : "All classes"; sel.appendChild(all);
+    var set = {};
+    state.all.forEach(function (r) { if (r.grade) set[r.grade] = 1; });
+    Object.keys(set).sort(function (a, b) { return (gradeKey(a) - gradeKey(b)) || (a < b ? -1 : a > b ? 1 : 0); }).forEach(function (g) {
+      var o = document.createElement("option"); o.value = g; o.textContent = gradeLabel(g); sel.appendChild(o);
+    });
+    sel.value = prev;
+    if (sel.value !== prev) { sel.value = ""; state.vg = ""; }
   }
 
   // ---- admin auth ----
@@ -1077,6 +1107,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
 
   // ---- wiring ----
   $("q").addEventListener("input", renderLookup);
+  $("vgrade").addEventListener("change", function () { state.vg = $("vgrade").value; renderLookup(); });
   $("dq").addEventListener("input", function () { state.dq = $("dq").value; renderAdmin(); });
   $("dgrade").addEventListener("change", function () {
     var v = $("dgrade").value;
@@ -1125,6 +1156,7 @@ mark { background: rgba(46,107,230,.18); color: inherit; border-radius: 4px; pad
       loadYears();
       loadStudents();
       buildGradeSelect();
+      buildViewerGrades();
       applyStatic();
       if (keepAdmin && state.admin) renderAdmin();
     } catch (err) {
